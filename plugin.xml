@@ -31,6 +31,15 @@
     
         <framework src="PassKit.framework" />
         <framework src="WatchConnectivity.framework" />
+
+        <config-file target="*-Release.plist"
+            parent="com.apple.developer.payment-pass-provisioning">
+            <true/>
+        </config-file>
+        <config-file target="*-Debug.plist"
+            parent="com.apple.developer.payment-pass-provisioning">
+            <true/>
+        </config-file>
         
     </platform>
 </plugin>
