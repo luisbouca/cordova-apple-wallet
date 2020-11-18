@@ -54,11 +54,24 @@ typedef void (^completedPaymentProcessHandler)(PKAddPaymentPassRequest *request)
     Boolean cardAddedtoRemotePasses = false;
     
     PKPassLibrary *passLibrary = [[PKPassLibrary alloc] init];
-    NSArray<PKPass *> *paymentPasses = [passLibrary passesOfType:PKPassTypePayment];
-    for (PKPass *pass in paymentPasses) {
-         PKPaymentPass * paymentPass = [pass paymentPass];
-        if([paymentPass primaryAccountIdentifier] == cardIdentifier)
-            cardAddedtoPasses = true;
+//     NSArray<PKPass *> *paymentPasses = [passLibrary passesOfType:PKPassTypePayment];
+    NSArray *paymentPasses = [[NSArray alloc] init];
+    if (@available(iOS 13.5, *)) { // PKPassTypePayment is deprecated in iOS13.5
+      paymentPasses = [passLibrary passesOfType: PKPassTypeSecureElement];
+      for (PKPass *pass in paymentPasses) {
+        PKSecureElementPass *paymentPass = [pass secureElementPass];
+        if ([[paymentPass primaryAccountIdentifier] isEqualToString:cardIdentifier]) {
+          cardAddedtoPasses = true;
+        }
+      }
+    } else {
+      paymentPasses = [passLibrary passesOfType: PKPassTypePayment];
+      for (PKPass *pass in paymentPasses) {
+        PKPaymentPass *paymentPass = [pass paymentPass];
+        if([[paymentPass primaryAccountIdentifier] isEqualToString:cardIdentifier]) {
+          cardAddedtoPasses = true;
+        }
+      }
     }
     
     if (WCSession.isSupported) { // check if the device support to handle an Apple Watch
@@ -67,12 +80,23 @@ typedef void (^completedPaymentProcessHandler)(PKAddPaymentPassRequest *request)
         [session activateSession];
         
         if ([session isPaired]) { // Check if the iPhone is paired with the Apple Watch
-            paymentPasses = [passLibrary remotePaymentPasses];
-            for (PKPass *pass in paymentPasses) {
-                PKPaymentPass * paymentPass = [pass paymentPass];
-                if([paymentPass primaryAccountIdentifier] == cardIdentifier)
-                    cardAddedtoRemotePasses = true;
+
+          if (@available(iOS 13.5, *)) {
+                paymentPasses = [passLibrary remoteSecureElementPasses]; // remotePaymentPasses is deprecated in iOS13.5
+                for (PKSecureElementPass *pass in paymentPasses) {
+                    if ([[pass primaryAccountIdentifier] isEqualToString:cardIdentifier]) {
+                        cardAddedtoPasses = true;
+                    }
+                }
+            } else {
+                paymentPasses = [passLibrary remotePaymentPasses];
+                for (PKPass *pass in paymentPasses) {
+                    PKPaymentPass * paymentPass = [pass paymentPass];
+                    if([[paymentPass primaryAccountIdentifier] isEqualToString:cardIdentifier])
+                        cardAddedtoRemotePasses = true;
+                }
             }
+          
         }
         else
             cardAddedtoRemotePasses = true;
@@ -96,25 +120,47 @@ typedef void (^completedPaymentProcessHandler)(PKAddPaymentPassRequest *request)
     Boolean cardAddedtoRemotePasses = false;
     
     PKPassLibrary *passLibrary = [[PKPassLibrary alloc] init];
-    NSArray<PKPass *> *paymentPasses = [passLibrary passesOfType:PKPassTypePayment];
-    for (PKPass *pass in paymentPasses) {
-        PKPaymentPass * paymentPass = [pass paymentPass];
-        if([paymentPass primaryAccountNumberSuffix] == cardSuffix)
+//     NSArray<PKPass *> *paymentPasses = [passLibrary passesOfType:PKPassTypePayment];
+    NSArray *paymentPasses = [[NSArray alloc] init];
+    if (@available(iOS 13.5, *)) { // PKPassTypePayment is deprecated in iOS 13.5
+      paymentPasses = [passLibrary passesOfType: PKPassTypeSecureElement];
+        for (PKPass *pass in paymentPasses) {
+            PKSecureElementPass *paymentPass = [pass secureElementPass];
+            if ([[paymentPass primaryAccountNumberSuffix] isEqualToString:cardSuffix]) {
+                cardAddedtoPasses = true;
+            }
+        }
+    } else {
+      paymentPasses = [passLibrary passesOfType: PKPassTypePayment];
+        for (PKPass *pass in paymentPasses) {
+          PKPaymentPass * paymentPass = [pass paymentPass];
+          if([[paymentPass primaryAccountNumberSuffix] isEqualToString:cardSuffix])
             cardAddedtoPasses = true;
+        }
     }
-    
+   
     if (WCSession.isSupported) { // check if the device support to handle an Apple Watch
         WCSession *session = [WCSession defaultSession];
         [session setDelegate:self.appDelegate];
         [session activateSession];
         
         if ([session isPaired]) { // Check if the iPhone is paired with the Apple Watch
+          if (@available(iOS 13.5, *)) { // remotePaymentPasses is deprecated in iOS 13.5
+            paymentPasses = [passLibrary remoteSecureElementPasses];
+            for (PKSecureElementPass *pass in paymentPasses) {
+              if ([[pass primaryAccountNumberSuffix] isEqualToString:cardSuffix]) {
+                cardAddedtoPasses = true;
+              }
+            }
+          } else {
             paymentPasses = [passLibrary remotePaymentPasses];
             for (PKPass *pass in paymentPasses) {
-                PKPaymentPass * paymentPass = [pass paymentPass];
-                if([paymentPass primaryAccountNumberSuffix] == cardSuffix)
-                    cardAddedtoRemotePasses = true;
+              PKPaymentPass * paymentPass = [pass paymentPass];
+                if([[paymentPass primaryAccountNumberSuffix] isEqualToString:cardSuffix])
+                  cardAddedtoRemotePasses = true;
+                }
             }
+
         }
         else
             cardAddedtoRemotePasses = true;
@@ -132,10 +178,16 @@ typedef void (^completedPaymentProcessHandler)(PKAddPaymentPassRequest *request)
 // Plugin Method - check paired devices
 - (void) checkPairedDevices:(CDVInvokedUrlCommand *)command 
 {
-    AppDelegate *appDelegate = (AppDelegate *)[[UIApplication sharedApplication] delegate];
     NSMutableDictionary* dictionary = [[NSMutableDictionary alloc] init];
-    if(appDelegate.isPairedWatchExist) {
-        [dictionary setObject:@"True" forKey:@"isWatchPaired"];
+    if (WCSession.isSupported) { // check if the device support to handle an Apple Watch
+        WCSession *session = [WCSession defaultSession];
+        [session setDelegate:self.appDelegate];
+        [session activateSession];
+        if (session.isPaired) { // Check if the iPhone is paired with the Apple Watch
+            [dictionary setObject:@"True" forKey:@"isWatchPaired"];
+        } else {
+            [dictionary setObject:@"False" forKey:@"isWatchPaired"];
+        }
     } else {
         [dictionary setObject:@"False" forKey:@"isWatchPaired"];
     }
@@ -184,7 +236,7 @@ typedef void (^completedPaymentProcessHandler)(PKAddPaymentPassRequest *request)
     NSArray<PKPass *> *paymentPasses = [passLibrary passesOfType:PKPassTypePayment];
     for (PKPass *pass in paymentPasses) {
         PKPaymentPass * paymentPass = [pass paymentPass];
-        if([paymentPass primaryAccountNumberSuffix] == cardSuffix)
+        if([[paymentPass primaryAccountNumberSuffix] isEqualToString:cardSuffix])
             return [paymentPass primaryAccountIdentifier];
     }
     
@@ -197,13 +249,13 @@ typedef void (^completedPaymentProcessHandler)(PKAddPaymentPassRequest *request)
             paymentPasses = [passLibrary remotePaymentPasses];
             for (PKPass *pass in paymentPasses) {
                 PKPaymentPass * paymentPass = [pass paymentPass];
-                if([paymentPass primaryAccountNumberSuffix] == cardSuffix)
+                if([[paymentPass primaryAccountNumberSuffix] isEqualToString:cardSuffix])
                     return [paymentPass primaryAccountIdentifier];
             }
         }
     }
     
-    return @"";
+    return nil;
 }
 
 
@@ -225,7 +277,20 @@ typedef void (^completedPaymentProcessHandler)(PKAddPaymentPassRequest *request)
         // Options
         NSDictionary* options = [arguments objectAtIndex:0];
         
-        PKAddPaymentPassRequestConfiguration* configuration = [[PKAddPaymentPassRequestConfiguration alloc] initWithEncryptionScheme:PKEncryptionSchemeRSA_V2];
+        // encryption scheme to be used (RSA_V2 or ECC_V2)
+        NSString* scheme = [options objectForKey:@"encryptionScheme"];
+        PKEncryptionScheme encryptionScheme = PKEncryptionSchemeRSA_V2;
+        if (scheme != nil) {
+            if([[scheme uppercaseString] isEqualToString:@"RSA_V2"]) {
+                encryptionScheme = PKEncryptionSchemeRSA_V2;
+            }
+            
+            if([[scheme uppercaseString] isEqualToString:@"ECC_V2"]) {
+                encryptionScheme = PKEncryptionSchemeECC_V2;
+            }
+        }
+
+        PKAddPaymentPassRequestConfiguration* configuration = [[PKAddPaymentPassRequestConfiguration alloc] initWithEncryptionScheme:encryptionScheme];
         
         // The name of the person the card is issued to
         configuration.cardholderName = [options objectForKey:@"cardholderName"];
@@ -237,7 +302,7 @@ typedef void (^completedPaymentProcessHandler)(PKAddPaymentPassRequest *request)
         configuration.localizedDescription = [options objectForKey:@"localizedDescription"];
         
         // Filters the device and attached devices that already have this card provisioned. No filter is applied if the parameter is omitted
-        configuration.primaryAccountIdentifier = [options objectForKey:@"primaryAccountIdentifier"]; //@"V-3018253329239943005544";//@"";
+        configuration.primaryAccountIdentifier = [self getCardFPAN:configuration.primaryAccountSuffix]; //@"V-3018253329239943005544";//@"";
         
         
         // Filters the networks shown in the introduction view to this single network.
@@ -349,10 +414,16 @@ typedef void (^completedPaymentProcessHandler)(PKAddPaymentPassRequest *request)
         NSString* activationData = [options objectForKey:@"activationData"];
         NSString* encryptedPassData = [options objectForKey:@"encryptedPassData"];
         NSString* wrappedKey = [options objectForKey:@"wrappedKey"];
+        NSString* ephemeralPublicKey = [options objectForKey:@"ephemeralPublicKey"];
         
         request.activationData = [[NSData alloc] initWithBase64EncodedString:activationData options:0]; //[activationData dataUsingEncoding:NSUTF8StringEncoding];
         request.encryptedPassData = [[NSData alloc] initWithBase64EncodedString:encryptedPassData options:0];
-        request.wrappedKey = [[NSData alloc] initWithBase64EncodedString:wrappedKey options:0];
+        if (wrappedKey) {
+            request.wrappedKey = [[NSData alloc] initWithBase64EncodedString:wrappedKey options:0];
+        }
+        if (ephemeralPublicKey) {
+            request.ephemeralPublicKey = [[NSData alloc] initWithBase64EncodedString:ephemeralPublicKey options:0];
+        }
         
         // Issue request
         self.completionHandler(request);
