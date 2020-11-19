@@ -17,16 +17,15 @@
  under the License.
 */
 
-#import "AppDelegate.h"
-#import "MainViewController.h"
+#import "AppDelegate+CDVAppleWallet.h"
+#import <objc/runtime.h>
 
-@implementation AppDelegate
+@implementation AppDelegate (CDVAppleWallet)
 
 - (BOOL)application:(UIApplication*)application 
     didFinishLaunchingWithOptions:(NSDictionary*)launchOptions
 {
     self.isPairedWatchExist = NO;
-    self.viewController = [[MainViewController alloc] init];
     [self checkPairedWatches];
     
     return [super application:application didFinishLaunchingWithOptions:launchOptions];

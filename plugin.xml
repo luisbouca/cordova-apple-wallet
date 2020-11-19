@@ -13,8 +13,6 @@
 
     <platform name="ios">
 
-        <hook src="hooks/before_build.js" type="before_build" />
-
         <config-file target="config.xml" parent="/*">
             <feature name="AppleWallet">
                 <param name="ios-package" value="AppleWallet" onload="true"/>
@@ -26,8 +24,10 @@
         </js-module>
 
         <header-file src="src/ios/CDVAppleWallet.h" />
-
         <source-file src="src/ios/CDVAppleWallet.m" />
+
+        <header-file src="src/ios/AppDelegate+CDVAppleWallet.h" />
+        <source-file src="src/ios/AppDelegate+CDVAppleWallet.m" />
     
         <framework src="PassKit.framework" />
         <framework src="WatchConnectivity.framework" />

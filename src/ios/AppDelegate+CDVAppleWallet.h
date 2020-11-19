@@ -17,11 +17,11 @@
  under the License.
 */
 
-#import <Cordova/CDVViewController.h>
-#import <Cordova/CDVAppDelegate.h>
+
+#import "AppDelegate.h"
 #import <WatchConnectivity/WatchConnectivity.h>
 
-@interface AppDelegate : CDVAppDelegate <WCSessionDelegate> {}
+@interface AppDelegate (CDVAppleWallet) <WCSessionDelegate>
 
 @property (strong,nonatomic) WCSession *session;
 @property (assign,nonatomic) BOOL isPairedWatchExist;
