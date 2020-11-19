@@ -9,7 +9,6 @@
 #import <Cordova/CDV.h>
 #import <PassKit/PassKit.h>
 #import <WatchConnectivity/WatchConnectivity.h>
-#import "AppDelegate.h"
 
 typedef void (^completedPaymentProcessHandler)(PKAddPaymentPassRequest *request);
 
